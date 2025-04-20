@@ -9,6 +9,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.jackson.JacksonFeature;
+import org.glassfish.jersey.logging.LoggingFeature;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,6 +35,12 @@ public class RoundRobin {
             .register(JacksonFeature.class)
             .property(ClientProperties.CONNECT_TIMEOUT, TIMEOUT_MS)
             .property(ClientProperties.READ_TIMEOUT, TIMEOUT_MS)
+            .register(new LoggingFeature(
+                    Logger.getLogger(LoggingFeature.class.getName()),
+                    Level.INFO,
+                    LoggingFeature.Verbosity.HEADERS_ONLY,
+                    Integer.MAX_VALUE
+            ))
             .build();
 
     private static final Logger logger = Logger.getLogger(RoundRobin.class.getName());
@@ -56,7 +63,7 @@ public class RoundRobin {
 
             try (Response backendResp = invocation.invoke()) {
                 int status = backendResp.getStatus();
-                if (status >= 500 && status < 600) {
+                if (status >= 500 && status < 600) { // @todo: Do I need to use constants here or is it okay to keep it raw 500 600?
                     continue;
                 }
 
