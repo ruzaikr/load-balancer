@@ -33,15 +33,16 @@ public class LoadBalancerService {
 
   public Response proxy(JsonNode payload, UriInfo uriInfo) {
     for (int attemptNum = 1; attemptNum <= maxRetries; attemptNum++) {
-      int nextRoundRobinIndex = Math.abs(counter.getAndIncrement() % backends.size());
+      int nextRoundRobinIndex = getNextRoundRobinIndexAndIncrementCounter();
       URI targetUri = URI.create(backends.get(nextRoundRobinIndex))
           .resolve(uriInfo.getPath());
 
       try (Response backendResponse = client.target(targetUri)
-          .request(MediaType.APPLICATION_JSON)
-          .post(Entity.json(payload))) {
+                                            .request(MediaType.APPLICATION_JSON)
+                                            .post(Entity.json(payload))) {
 
         int backendResponseStatus = backendResponse.getStatus();
+        // If received 5xx, try next backend instance
         if (backendResponseStatus >= 500 && backendResponseStatus < 600) {
           continue;
         }
@@ -63,5 +64,13 @@ public class LoadBalancerService {
         .entity(
             "{\"error\":\"Service unavailable.\"}") // @todo: Is it okay to build the response body like this?
         .build();
+  }
+
+  private int getNextRoundRobinIndexAndIncrementCounter() {
+    return counter.getAndUpdate(current ->
+        current >= backends.size() - 1
+            ? 0
+            : current + 1
+    );
   }
 }
