@@ -71,7 +71,7 @@ public class LoadBalancerService {
         continue;
       }
 
-      URI targetUri = URI.create(backends.get(nextRoundRobinIndex))
+      URI targetUri = URI.create(backend)
           .resolve(uriInfo.getPath());
 
       try (Response backendResponse = client.target(targetUri)
