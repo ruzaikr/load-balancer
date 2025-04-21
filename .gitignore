@@ -9,6 +9,11 @@ target/
 .idea/compiler.xml
 .idea/vcs.xml
 .idea/libraries/
+.idea/checkstyle-idea.xml
+.idea/checkstyleidea-libs/
+.idea/codeStyles/
+.idea/uiDesigner.xml
+
 *.iws
 *.iml
 *.ipr
