@@ -11,7 +11,6 @@ import org.glassfish.jersey.logging.LoggingFeature;
 
 public class ClientFactory {
 
-  // @todo: Don't I need to add Inject annotation here?
   public static Client create(AppConfig appConfig) {
     return ClientBuilder.newBuilder()
         .register(JacksonFeature.class)

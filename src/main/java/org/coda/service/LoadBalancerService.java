@@ -27,8 +27,7 @@ public class LoadBalancerService {
   @Inject
   public LoadBalancerService(AppConfig appConfig) {
     this.backends = appConfig.getBackends();
-    this.client = ClientFactory.create(
-        appConfig); // @todo: So, we create a new client for each request
+    this.client = ClientFactory.create(appConfig);
     this.maxRetries = appConfig.getMaxRetries();
   }
 
