@@ -50,11 +50,15 @@ class LoadBalancerServiceTest {
   LoadBalancerService service;
 
   @Mock
+  JsonNode payload;
+
+  @Mock
   Response successResponse;
 
   JsonNode successJsonNode;
 
   private final ObjectMapper mapper = new ObjectMapper();
+
 
   @BeforeEach
   void setUp() {
@@ -78,14 +82,23 @@ class LoadBalancerServiceTest {
 
   @Test
   void successOnFirstBackend() {
-    JsonNode payload = mapper.createObjectNode().put("game", "Mobile Legends")
-                                                .put("gamerID", "GYUTDTE")
-                                                .put("points", 20);
-
     when(invocationBuiler.post(any(Entity.class))).thenReturn(successResponse);
 
-    Response response = service.proxy(payload, uriInfo);
-    assertEquals(Status.OK.getStatusCode(), response.getStatus());
-    assertEquals(successJsonNode, response.getEntity());
+    try (Response response = service.proxy(payload, uriInfo)) {
+      assertEquals(Status.OK.getStatusCode(), response.getStatus());
+      assertEquals(successJsonNode, response.getEntity());
+    }
+  }
+
+  @Test
+  void successWhenNextBackendIsUnhealthy() {
+    when(invocationBuiler.post(any(Entity.class))).thenReturn(successResponse);
+
+    when(backendHealthReader.isHealthy("http://a")).thenReturn(false);
+
+    try (Response response = service.proxy(payload, uriInfo)) {
+      assertEquals(Status.OK.getStatusCode(), response.getStatus());
+      assertEquals(successJsonNode, response.getEntity());
+    }
   }
 }
