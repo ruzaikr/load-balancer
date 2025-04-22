@@ -1,11 +1,18 @@
 package org.coda.server;
 
 import jakarta.inject.Singleton;
+import jakarta.ws.rs.client.Client;
 import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.coda.client.ClientFactory;
 import org.coda.config.AppConfig;
 import org.coda.exception.GenericExceptionMapper;
+import org.coda.health.BackendHealthChecker;
+import org.coda.health.BackendHealthReader;
 import org.coda.service.LoadBalancerService;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -31,6 +38,21 @@ public class ServerApp {
         Integer.MAX_VALUE
     );
 
+    Client client = ClientFactory.create(appConfig);
+
+    BackendHealthChecker backendHealthChecker =
+        new BackendHealthChecker(appConfig.getBackends(), client);
+    ScheduledExecutorService scheduledExecutorService =
+        Executors.newSingleThreadScheduledExecutor(runnable -> {
+          Thread thread = new Thread(runnable, "health-checker");
+          thread.setDaemon(true);
+          return thread;
+        });
+    scheduledExecutorService.scheduleAtFixedRate(backendHealthChecker,
+                                                 0,
+                                                 10,
+                                                 TimeUnit.SECONDS);
+
     return new ResourceConfig()
         .packages("org.coda.resources")
         .register(GenericExceptionMapper.class)
@@ -40,6 +62,8 @@ public class ServerApp {
           @Override
           protected void configure() {
             bind(AppConfig.load()).to(AppConfig.class);
+            bind(client).to(Client.class);
+            bind(backendHealthChecker).to(BackendHealthReader.class);
             bindAsContract(LoadBalancerService.class).in(Singleton.class);
           }
         })
