@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.coda.client.ClientFactory;
 import org.coda.config.AppConfig;
+import org.coda.model.ErrorResponse;
 
 public class LoadBalancerService {
 
@@ -102,10 +103,15 @@ public class LoadBalancerService {
       }
     }
 
+    ErrorResponse errorResponse = new ErrorResponse(
+        Status.SERVICE_UNAVAILABLE.getStatusCode(),
+        "ServiceUnavailable",
+        "Service unavailable. Please try again later."
+    );
+
     return Response
         .status(Response.Status.SERVICE_UNAVAILABLE)
-        .entity(
-            "{\"error\":\"Service unavailable.\"}") // @todo: Is it okay to build the response body like this?
+        .entity(errorResponse)
         .build();
   }
 
