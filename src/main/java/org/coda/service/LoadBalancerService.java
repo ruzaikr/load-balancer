@@ -49,16 +49,10 @@ public class LoadBalancerService {
         continue;
       }
 
-      URI targetUri = URI.create(backend)
-          .resolve(uriInfo.getPath());
-
-      try (Response backendResponse = client.target(targetUri)
-                                            .request(MediaType.APPLICATION_JSON)
-                                            .post(Entity.json(payload))) {
+      try (Response backendResponse = callBackend(backend, uriInfo.getPath(), payload)) {
 
         int backendResponseStatus = backendResponse.getStatus();
-        // If received 5xx, try next backend instance
-        if (backendResponseStatus >= 500 && backendResponseStatus < 600) {
+        if (isStatus5xx(backendResponseStatus)) {
           backendHealthReader.setToUnhealthy(backend);
           logger.log(Level.WARNING,
               "Attempt {0}/{1}: Backend {2} unavailable. Got: {3}",
@@ -66,10 +60,9 @@ public class LoadBalancerService {
           continue;
         }
 
-        JsonNode backendResponseBody = backendResponse.readEntity(JsonNode.class);
         return Response
             .status(backendResponseStatus)
-            .entity(backendResponseBody)
+            .entity(backendResponse.readEntity(JsonNode.class))
             .build();
       } catch (ProcessingException processingException) {
         backendHealthReader.setToUnhealthy(backend);
@@ -97,5 +90,19 @@ public class LoadBalancerService {
             ? 0
             : current + 1
     );
+  }
+
+  private Response callBackend(String backend,
+                               String path,
+                               JsonNode payload) throws ProcessingException {
+    URI uri = URI.create(backend)
+                 .resolve(path);
+    return client.target(uri)
+                 .request(MediaType.APPLICATION_JSON)
+                 .post(Entity.json(payload));
+  }
+
+  private boolean isStatus5xx(int statusCode) {
+    return statusCode >= 500 && statusCode < 600;
   }
 }
