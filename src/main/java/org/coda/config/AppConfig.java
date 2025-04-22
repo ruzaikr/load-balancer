@@ -50,6 +50,14 @@ public class AppConfig {
     return Arrays.asList(s.split("\\s*,\\s*"));
   }
 
+  public int getScheduleInitialDelay() {
+    return Integer.parseInt(props.getProperty("schedule.initialDelay"));
+  }
+
+  public int getSchedulePeriod() {
+    return Integer.parseInt(props.getProperty("schedule.period"));
+  }
+
   public UriBuilder baseUriBuilder() {
     return UriBuilder.fromPath("/")
         .scheme(getScheme())

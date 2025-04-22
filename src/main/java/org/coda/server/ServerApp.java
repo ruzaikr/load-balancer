@@ -49,8 +49,8 @@ public class ServerApp {
           return thread;
         });
     scheduledExecutorService.scheduleAtFixedRate(backendHealthChecker,
-                                                 0,
-                                                 10,
+                                                 appConfig.getScheduleInitialDelay(),
+                                                 appConfig.getSchedulePeriod(),
                                                  TimeUnit.SECONDS);
 
     return new ResourceConfig()
