@@ -45,10 +45,6 @@ public class AppConfig {
     return Integer.parseInt(props.getProperty("client.readTimeoutMs"));
   }
 
-  public int getMaxRetries() {
-    return Integer.parseInt(props.getProperty("client.maxRetries"));
-  }
-
   public List<String> getBackends() {
     String s = props.getProperty("loadbalancer.backends");
     return Arrays.asList(s.split("\\s*,\\s*"));

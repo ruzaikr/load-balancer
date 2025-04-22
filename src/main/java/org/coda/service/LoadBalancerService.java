@@ -26,7 +26,6 @@ public class LoadBalancerService {
   private final List<String> backends;
   private final ConcurrentMap<String, Boolean> healthyMap;
   private final Client client;
-  private final int maxRetries;
   private final AtomicInteger counter = new AtomicInteger();
   private final Logger logger = Logger.getLogger(getClass().getName());
 
@@ -34,7 +33,6 @@ public class LoadBalancerService {
   public LoadBalancerService(AppConfig appConfig) {
     this.backends = appConfig.getBackends();
     this.client = ClientFactory.create(appConfig);
-    this.maxRetries = appConfig.getMaxRetries();
 
     this.healthyMap = new ConcurrentHashMap<>();
     backends.forEach(backend -> healthyMap.put(backend, true));
@@ -63,11 +61,15 @@ public class LoadBalancerService {
   }
 
   public Response proxy(JsonNode payload, UriInfo uriInfo) {
-    for (int attemptNum = 1; attemptNum <= maxRetries; attemptNum++) {
+    int maxAttempts = backends.size();
+    for (int attemptNum = 1; attemptNum <= maxAttempts; attemptNum++) {
       int nextRoundRobinIndex = getNextRoundRobinIndexAndIncrementCounter();
       String backend = backends.get(nextRoundRobinIndex);
 
       if (!healthyMap.get(backend)) {
+        logger.log(Level.WARNING,
+            "Attempt {0}/{1}: Backend {2} unavailable.",
+            new Object[]{attemptNum, maxAttempts, backend});
         continue;
       }
 
@@ -81,6 +83,9 @@ public class LoadBalancerService {
         int backendResponseStatus = backendResponse.getStatus();
         // If received 5xx, try next backend instance
         if (backendResponseStatus >= 500 && backendResponseStatus < 600) {
+          logger.log(Level.WARNING,
+              "Attempt {0}/{1}: Backend {2} unavailable. Got: {3}",
+              new Object[]{attemptNum, maxAttempts, backend, backendResponseStatus});
           continue;
         }
 
@@ -93,7 +98,7 @@ public class LoadBalancerService {
         healthyMap.put(backend, false);
         logger.log(Level.WARNING,
             "Attempt {0}/{1}: Backend {2} unavailable. Reason: {3}",
-            new Object[]{attemptNum, maxRetries, targetUri, processingException.getMessage()});
+            new Object[]{attemptNum, maxAttempts, backend, processingException.getMessage()});
       }
     }
 

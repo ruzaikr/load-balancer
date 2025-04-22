@@ -32,10 +32,10 @@ public class ServerApp {
     );
 
     return new ResourceConfig()
-        .packages("org.coda.resources", "org.coda.exception")
+        .packages("org.coda.resources")
+        .register(GenericExceptionMapper.class)
         .register(JacksonFeature.class)
         .register(loggingFeature)
-        .register(GenericExceptionMapper.class)
         .register(new AbstractBinder() {
           @Override
           protected void configure() {
