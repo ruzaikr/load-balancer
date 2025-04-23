@@ -15,14 +15,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.coda.config.AppConfig;
-import org.coda.health.BackendHealthReader;
+import org.coda.health.BackendHealthManager;
 import org.coda.model.ErrorResponse;
 
 public class LoadBalancerService {
 
   private final List<String> backends;
   private final Client client;
-  private final BackendHealthReader backendHealthReader;
+  private final BackendHealthManager backendHealthManager;
 
   private final AtomicInteger counter = new AtomicInteger();
   private final Logger logger = Logger.getLogger(getClass().getName());
@@ -30,10 +30,10 @@ public class LoadBalancerService {
   @Inject
   public LoadBalancerService(AppConfig appConfig,
                              Client client,
-                             BackendHealthReader backendHealthReader) {
+                             BackendHealthManager backendHealthManager) {
     this.backends = appConfig.getBackends();
     this.client = client;
-    this.backendHealthReader = backendHealthReader;
+    this.backendHealthManager = backendHealthManager;
   }
 
   public Response proxy(JsonNode payload, UriInfo uriInfo) {
@@ -42,7 +42,7 @@ public class LoadBalancerService {
       int nextRoundRobinIndex = getNextRoundRobinIndexAndIncrementCounter();
       String backend = backends.get(nextRoundRobinIndex);
 
-      if (!backendHealthReader.isHealthy(backend)) {
+      if (!backendHealthManager.isHealthy(backend)) {
         logger.log(Level.WARNING,
             "Attempt {0}/{1}: Backend {2} unavailable.",
             new Object[]{attemptNum, maxAttempts, backend});
@@ -53,7 +53,7 @@ public class LoadBalancerService {
 
         int backendResponseStatus = backendResponse.getStatus();
         if (isStatus5xx(backendResponseStatus)) {
-          backendHealthReader.setToUnhealthy(backend);
+          backendHealthManager.setToUnhealthy(backend);
           logger.log(Level.WARNING,
               "Attempt {0}/{1}: Backend {2} unavailable. Got: {3}",
               new Object[]{attemptNum, maxAttempts, backend, backendResponseStatus});
@@ -65,7 +65,7 @@ public class LoadBalancerService {
             .entity(backendResponse.readEntity(JsonNode.class))
             .build();
       } catch (ProcessingException processingException) {
-        backendHealthReader.setToUnhealthy(backend);
+        backendHealthManager.setToUnhealthy(backend);
         logger.log(Level.WARNING,
             "Attempt {0}/{1}: Backend {2} unavailable. Reason: {3}",
             new Object[]{attemptNum, maxAttempts, backend, processingException.getMessage()});

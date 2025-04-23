@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class BackendHealthChecker implements BackendHealthReader, Runnable {
+public class BackendHealthChecker implements BackendHealthManager, Runnable {
   private final List<String> backends;
   private final Client client;
   private final ConcurrentMap<String, Boolean> healthyMap;

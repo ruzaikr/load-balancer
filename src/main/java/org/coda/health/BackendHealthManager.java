@@ -1,6 +1,6 @@
 package org.coda.health;
 
-public interface BackendHealthReader {
+public interface BackendHealthManager {
 
   boolean isHealthy(String backend);
 

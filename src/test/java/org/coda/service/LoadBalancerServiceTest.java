@@ -25,7 +25,7 @@ import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.List;
 import org.coda.config.AppConfig;
-import org.coda.health.BackendHealthReader;
+import org.coda.health.BackendHealthManager;
 import org.coda.model.ErrorResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,7 @@ class LoadBalancerServiceTest {
   Client client;
 
   @Mock
-  BackendHealthReader backendHealthReader;
+  BackendHealthManager backendHealthManager;
 
   @Mock
   UriInfo uriInfo;
@@ -81,10 +81,10 @@ class LoadBalancerServiceTest {
         .thenReturn(webTarget);
 
     // backendHealthReader defaults to healthy
-    when(backendHealthReader.isHealthy(anyString()))
+    when(backendHealthManager.isHealthy(anyString()))
         .thenReturn(true);
 
-    service = new LoadBalancerService(appConfig, client, backendHealthReader);
+    service = new LoadBalancerService(appConfig, client, backendHealthManager);
 
     when(webTarget.request(MediaType.APPLICATION_JSON))
         .thenReturn(invocationBuilder);
@@ -123,7 +123,7 @@ class LoadBalancerServiceTest {
     when(invocationBuilder.post(any(Entity.class)))
         .thenReturn(successResponse);
 
-    when(backendHealthReader.isHealthy("http://a"))
+    when(backendHealthManager.isHealthy("http://a"))
         .thenReturn(false);
 
     try (Response response = service.proxy(payload, uriInfo)) {
@@ -147,7 +147,7 @@ class LoadBalancerServiceTest {
       assertEquals(Status.OK.getStatusCode(), response.getStatus());
       assertEquals(successJsonNode, response.getEntity());
     }
-    verify(backendHealthReader).setToUnhealthy("http://a");
+    verify(backendHealthManager).setToUnhealthy("http://a");
   }
 
   @Test
@@ -162,7 +162,7 @@ class LoadBalancerServiceTest {
       assertEquals(Status.OK.getStatusCode(), response.getStatus());
       assertEquals(successJsonNode, response.getEntity());
     }
-    verify(backendHealthReader).setToUnhealthy("http://a");
+    verify(backendHealthManager).setToUnhealthy("http://a");
   }
 
   @Test
@@ -180,7 +180,7 @@ class LoadBalancerServiceTest {
       assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
       assertEquals(notFoundJsonNode, response.getEntity());
     }
-    verify(backendHealthReader, never()).setToUnhealthy(anyString());
+    verify(backendHealthManager, never()).setToUnhealthy(anyString());
   }
 
   @Test
@@ -214,26 +214,24 @@ class LoadBalancerServiceTest {
     stubSuccessResponse();
     when(invocationBuilder.post(any(Entity.class))).thenReturn(successResponse);
 
-    // call four times
-    try (Response _ = service.proxy(payload, uriInfo);
-        Response _ = service.proxy(payload, uriInfo);
-        Response _ = service.proxy(payload, uriInfo);
-        Response _ = service.proxy(payload, uriInfo)) {
-
-      List<URI> allUriArgumentValues = uriArgumentCaptor.getAllValues();
-      assertEquals(4, allUriArgumentValues.size());
-
-      URI first = allUriArgumentValues.get(0);
-      assertEquals(URI.create("http://a").resolve("/bounce"), first);
-
-      URI second = allUriArgumentValues.get(1);
-      assertEquals(URI.create("http://b").resolve("/bounce"), second);
-
-      URI third = allUriArgumentValues.get(2);
-      assertEquals(URI.create("http://c").resolve("/bounce"), third);
-
-      URI fourth = allUriArgumentValues.get(3);
-      assertEquals(URI.create("http://a").resolve("/bounce"), fourth);
+    for (int i = 0; i < 4; i++) {
+      try (Response _ = service.proxy(payload, uriInfo)) {}
     }
+
+    List<URI> allUriArgumentValues = uriArgumentCaptor.getAllValues();
+    assertEquals(4, allUriArgumentValues.size());
+
+    URI first = allUriArgumentValues.get(0);
+    assertEquals(URI.create("http://a").resolve("/bounce"), first);
+
+    URI second = allUriArgumentValues.get(1);
+    assertEquals(URI.create("http://b").resolve("/bounce"), second);
+
+    URI third = allUriArgumentValues.get(2);
+    assertEquals(URI.create("http://c").resolve("/bounce"), third);
+
+    URI fourth = allUriArgumentValues.get(3);
+    assertEquals(URI.create("http://a").resolve("/bounce"), fourth);
+
   }
 }

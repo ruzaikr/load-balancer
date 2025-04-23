@@ -12,7 +12,7 @@ import org.coda.client.ClientFactory;
 import org.coda.config.AppConfig;
 import org.coda.exception.GenericExceptionMapper;
 import org.coda.health.BackendHealthChecker;
-import org.coda.health.BackendHealthReader;
+import org.coda.health.BackendHealthManager;
 import org.coda.service.LoadBalancerService;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -63,7 +63,7 @@ public class ServerApp {
           protected void configure() {
             bind(AppConfig.load()).to(AppConfig.class);
             bind(client).to(Client.class);
-            bind(backendHealthChecker).to(BackendHealthReader.class);
+            bind(backendHealthChecker).to(BackendHealthManager.class);
             bindAsContract(LoadBalancerService.class).in(Singleton.class);
           }
         })
