@@ -7,8 +7,7 @@ A simple JSON-proxy REST service with round-robin load balancing and health chec
 - Round-robin forwarding of JSON `POST` requests to multiple backends  
 - Periodic health checks to mark backends up/down  
 - Retries on 5xx and connection failures  
-- Transparent pass-through of 2xx and 4xx responses  
-- Centralized error responses  
+- Transparent pass-through of 2xx and 4xx responses
 
 ## Prerequisites
 
