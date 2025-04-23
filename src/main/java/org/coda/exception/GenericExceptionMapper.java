@@ -19,7 +19,7 @@ public class GenericExceptionMapper implements ExceptionMapper<Throwable> {
     ErrorResponse errorResponse = new ErrorResponse(
         statusCode,
         exception.getClass().getSimpleName(),
-        exception.getMessage()
+        exception.getMessage() // @todo: Do not expose internal information
     );
 
     return Response.status(statusCode)

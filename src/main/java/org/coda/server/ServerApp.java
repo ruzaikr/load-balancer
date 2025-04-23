@@ -70,8 +70,7 @@ public class ServerApp {
         .property("jersey.config.server.wadl.disableWadl", true);
   }
 
-  // @todo: Can this be private?
-  public void start() throws IOException, InterruptedException {
+  private void start() throws IOException, InterruptedException {
     var resourceConfig = buildResourceConfig();
     var uri = appConfig.baseUriBuilder().build();
     HttpServer server = GrizzlyHttpServerFactory.createHttpServer(uri, resourceConfig, false);
