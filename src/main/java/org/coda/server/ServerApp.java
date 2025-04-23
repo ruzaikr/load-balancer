@@ -61,7 +61,7 @@ public class ServerApp {
         .register(new AbstractBinder() {
           @Override
           protected void configure() {
-            bind(AppConfig.load()).to(AppConfig.class);
+            bind(appConfig).to(AppConfig.class);
             bind(client).to(Client.class);
             bind(backendHealthChecker).to(BackendHealthManager.class);
             bindAsContract(LoadBalancerService.class).in(Singleton.class);
