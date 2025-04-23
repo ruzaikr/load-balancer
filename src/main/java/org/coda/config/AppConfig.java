@@ -17,7 +17,7 @@ public class AppConfig {
         props.load(in);
       }
     } catch (IOException exception) {
-      throw new RuntimeException("Failed to load application properties", exception);
+      throw new IllegalStateException("Failed to load application properties", exception);
     }
   }
 

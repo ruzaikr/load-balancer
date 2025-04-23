@@ -110,10 +110,10 @@ class LoadBalancerServiceTest {
     when(invocationBuilder.post(any(Entity.class)))
         .thenReturn(successResponse);
 
-    try (Response response = service.proxy(payload, uriInfo)) {
-      assertEquals(Status.OK.getStatusCode(), response.getStatus());
-      assertEquals(successJsonNode, response.getEntity());
-    }
+    Response response = service.proxy(payload, uriInfo);
+    assertEquals(Status.OK.getStatusCode(), response.getStatus());
+    assertEquals(successJsonNode, response.getEntity());
+
   }
 
   @Test
@@ -126,10 +126,10 @@ class LoadBalancerServiceTest {
     when(backendHealthManager.isHealthy("http://a"))
         .thenReturn(false);
 
-    try (Response response = service.proxy(payload, uriInfo)) {
-      assertEquals(Status.OK.getStatusCode(), response.getStatus());
-      assertEquals(successJsonNode, response.getEntity());
-    }
+    Response response = service.proxy(payload, uriInfo);
+    assertEquals(Status.OK.getStatusCode(), response.getStatus());
+    assertEquals(successJsonNode, response.getEntity());
+
   }
 
   @Test
@@ -143,10 +143,10 @@ class LoadBalancerServiceTest {
         .thenReturn(badGatewayResponse)
         .thenReturn(successResponse);
 
-    try (Response response = service.proxy(payload, uriInfo)) {
-      assertEquals(Status.OK.getStatusCode(), response.getStatus());
-      assertEquals(successJsonNode, response.getEntity());
-    }
+    Response response = service.proxy(payload, uriInfo);
+    assertEquals(Status.OK.getStatusCode(), response.getStatus());
+    assertEquals(successJsonNode, response.getEntity());
+
     verify(backendHealthManager).setToUnhealthy("http://a");
   }
 
@@ -158,10 +158,10 @@ class LoadBalancerServiceTest {
         .thenThrow(new ProcessingException("timeout"))
         .thenReturn(successResponse);
 
-    try (Response response = service.proxy(payload, uriInfo)) {
-      assertEquals(Status.OK.getStatusCode(), response.getStatus());
-      assertEquals(successJsonNode, response.getEntity());
-    }
+    Response response = service.proxy(payload, uriInfo);
+    assertEquals(Status.OK.getStatusCode(), response.getStatus());
+    assertEquals(successJsonNode, response.getEntity());
+
     verify(backendHealthManager).setToUnhealthy("http://a");
   }
 
@@ -176,10 +176,10 @@ class LoadBalancerServiceTest {
     when(invocationBuilder.post(any(Entity.class)))
         .thenReturn(notFoundResponse);
 
-    try (Response response = service.proxy(payload, uriInfo)) {
-      assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
-      assertEquals(notFoundJsonNode, response.getEntity());
-    }
+    Response response = service.proxy(payload, uriInfo);
+    assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
+    assertEquals(notFoundJsonNode, response.getEntity());
+
     verify(backendHealthManager, never()).setToUnhealthy(anyString());
   }
 
@@ -197,15 +197,14 @@ class LoadBalancerServiceTest {
         .thenThrow(new ProcessingException("timeout"))
         .thenReturn(notImplementedResponse);
 
-    try (Response response = service.proxy(payload, uriInfo)) {
-      assertEquals(Status.SERVICE_UNAVAILABLE.getStatusCode(), response.getStatus());
-      Object responseEntity = response.getEntity();
-      assertInstanceOf(ErrorResponse.class, responseEntity);
-      ErrorResponse errorResponse = (ErrorResponse) responseEntity;
-      assertEquals(Status.SERVICE_UNAVAILABLE.getStatusCode(), errorResponse.getStatus());
-      assertEquals("ServiceUnavailable", errorResponse.getError());
-      assertTrue(errorResponse.getDetails().contains("Please try again"));
-    }
+    Response response = service.proxy(payload, uriInfo);
+    assertEquals(Status.SERVICE_UNAVAILABLE.getStatusCode(), response.getStatus());
+    Object responseEntity = response.getEntity();
+    assertInstanceOf(ErrorResponse.class, responseEntity);
+    ErrorResponse errorResponse = (ErrorResponse) responseEntity;
+    assertEquals(Status.SERVICE_UNAVAILABLE.getStatusCode(), errorResponse.getStatus());
+    assertEquals("ServiceUnavailable", errorResponse.getError());
+    assertTrue(errorResponse.getDetails().contains("Please try again"));
 
   }
 
@@ -215,7 +214,7 @@ class LoadBalancerServiceTest {
     when(invocationBuilder.post(any(Entity.class))).thenReturn(successResponse);
 
     for (int i = 0; i < 4; i++) {
-      try (Response _ = service.proxy(payload, uriInfo)) {}
+      Response ignoredResponse = service.proxy(payload, uriInfo);
     }
 
     List<URI> allUriArgumentValues = uriArgumentCaptor.getAllValues();
